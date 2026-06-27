@@ -1,8 +1,9 @@
 import json
-import redis
 import asyncio
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from pymongo import MongoClient
+import redis
 
 app = FastAPI(title="Real-Time Analytics API")
 
@@ -12,8 +13,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:ZHKLl8YnC4uWR4M8@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+
+# Upstash Redis
+r = redis.Redis(
+    host='square-molly-76911.upstash.io',
+    port=6379,
+    password='gQAAAAAAASxvAAIgcDFiODQ2ZmRhMzA0YWM0NWIzOTA3NWIyYTY2MmE1YTA1Ng',
+    ssl=True,
+    decode_responses=True
+)
+
+# MongoDB Atlas
+MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:Ravindramalhotra7250@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
+mongo = MongoClient(MONGO_URL)
+db = mongo['analytics']
 
 CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Patna', 'Hyderabad']
 
@@ -36,12 +49,14 @@ def get_city_stats():
         })
     return stats
 
-# REST Endpoint
+@app.get("/")
+def root():
+    return {"message": "Real-Time Analytics Engine is Live!"}
+
 @app.get("/api/stats")
 def get_stats():
     return {"cities": get_city_stats()}
 
-# WebSocket — live data every 2 seconds
 @app.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()

@@ -12,7 +12,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:ZHKLl8YnC4uWR4M8@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Patna', 'Hyderabad']

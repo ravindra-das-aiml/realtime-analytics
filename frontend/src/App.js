@@ -8,7 +8,7 @@ function App() {
 
   useEffect(() => {
     // WebSocket connection
-    const ws = new WebSocket('ws://localhost:8000/ws/live');
+  const ws = new WebSocket('wss://realtime-analytics-api.onrender.com/ws/live');
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -26,7 +26,7 @@ function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/stats');
+     const res = await fetch('https://realtime-analytics-api.onrender.com/api/stats');
       const data = await res.json();
       setStats(data.cities);
       setLastUpdate(new Date().toLocaleTimeString());

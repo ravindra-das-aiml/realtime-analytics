@@ -5,38 +5,23 @@ import './App.css';
 function App() {
   const [stats, setStats] = useState([]);
   const [lastUpdate, setLastUpdate] = useState('');
-
-  useEffect(() => {
-    // WebSocket connection
-  const ws = new WebSocket('wss://realtime-analytics-api.onrender.com/ws/live');
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setStats(data);
-      setLastUpdate(new Date().toLocaleTimeString());
-    };
-
-    ws.onerror = () => {
-      // Fallback to REST API
-      fetchStats();
-    };
-
-    return () => ws.close();
-  }, []);
+  const [connected, setConnected] = useState(false);
 
   const fetchStats = async () => {
     try {
-     const res = await fetch('https://realtime-analytics-api.onrender.com/api/stats');
+      const res = await fetch('https://realtime-analytics-api.onrender.com/api/stats');
       const data = await res.json();
       setStats(data.cities);
       setLastUpdate(new Date().toLocaleTimeString());
+      setConnected(true);
     } catch (err) {
-      console.error(err);
+      setConnected(false);
     }
   };
 
   useEffect(() => {
-    const interval = setInterval(fetchStats, 2000);
+    fetchStats();
+    const interval = setInterval(fetchStats, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -46,9 +31,12 @@ function App() {
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
         <h1 style={{ color: '#38bdf8', fontSize: '2rem' }}>
-          Real-Time Analytics Engine
+          Real-Time Analytics Engine 🚀
         </h1>
-        <p style={{ color: '#94a3b8' }}>Live last update: {lastUpdate}</p>
+        <p style={{ color: connected ? '#4ade80' : '#f87171' }}>
+          {connected ? '🟢 Live — Updates every 3 seconds' : '🔴 Connecting...'}
+        </p>
+        <p style={{ color: '#94a3b8' }}>Last update: {lastUpdate}</p>
       </div>
 
       {/* City Cards */}

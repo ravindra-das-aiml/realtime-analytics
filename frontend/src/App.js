@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import './App.css';
 
-const CITY_COORDS = {
-  Mumbai:    [19.0760, 72.8777],
-  Delhi:     [28.6139, 77.2090],
-  Bangalore: [12.9716, 77.5946],
-  Patna:     [25.5941, 85.1376],
-  Hyderabad: [17.3850, 78.4867],
-};
-
 const COLORS = ['#f59e0b', '#818cf8', '#4ade80', '#f87171', '#38bdf8'];
+
+const CITY_POSITIONS = {
+  Mumbai:    { x: 180, y: 280 },
+  Delhi:     { x: 230, y: 160 },
+  Bangalore: { x: 220, y: 340 },
+  Patna:     { x: 300, y: 190 },
+  Hyderabad: { x: 240, y: 290 },
+};
 
 function App() {
   const [stats, setStats] = useState([]);
@@ -27,13 +25,10 @@ function App() {
       setStats(data.cities);
       setLastUpdate(new Date().toLocaleTimeString());
       setConnected(true);
-
-      // Alert system — speed > 60 km/h
       const newAlerts = data.cities
         .filter(c => c.avg_speed > 60)
-        .map(c => `⚠️ ${c.city}: High speed detected — ${c.avg_speed} km/h`);
+        .map(c => `⚠️ ${c.city}: High speed — ${c.avg_speed} km/h`);
       if (newAlerts.length > 0) setAlerts(newAlerts);
-
     } catch (err) {
       setConnected(false);
     }
@@ -67,12 +62,12 @@ function App() {
 
       {/* City Cards */}
       <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '30px' }}>
-        {stats.map((city) => (
+        {stats.map((city, i) => (
           <div key={city.city} style={{
             backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px',
-            minWidth: '180px', textAlign: 'center', border: '1px solid #334155'
+            minWidth: '180px', textAlign: 'center', border: `1px solid ${COLORS[i]}`
           }}>
-            <h2 style={{ color: '#38bdf8', margin: '0 0 10px' }}>{city.city}</h2>
+            <h2 style={{ color: COLORS[i], margin: '0 0 10px' }}>{city.city}</h2>
             <p style={{ margin: '5px 0', color: '#94a3b8' }}>Events: <span style={{ color: 'white' }}>{city.total_events.toLocaleString()}</span></p>
             <p style={{ margin: '5px 0', color: '#94a3b8' }}>Avg Speed: <span style={{ color: '#4ade80' }}>{city.avg_speed} km/h</span></p>
             <p style={{ margin: '5px 0', color: '#94a3b8' }}>Delivering: <span style={{ color: '#f59e0b' }}>{city.delivering}</span></p>
@@ -82,35 +77,51 @@ function App() {
         ))}
       </div>
 
-      {/* Map */}
-      <div style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '30px', height: '400px' }}>
+      {/* SVG Map */}
+      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px', marginBottom: '30px' }}>
         <h2 style={{ color: '#38bdf8', marginBottom: '10px' }}>🗺️ Live City Map</h2>
-        <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '350px', borderRadius: '12px' }}>
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {stats.map((city, i) => (
-            CITY_COORDS[city.city] && (
-              <CircleMarker
-                key={city.city}
-                center={CITY_COORDS[city.city]}
-                radius={city.total_events / 500}
-                fillColor={COLORS[i]}
-                color={COLORS[i]}
-                fillOpacity={0.7}
-              >
-                <Popup>
-                  <b>{city.city}</b><br />
-                  Events: {city.total_events}<br />
-                  Avg Speed: {city.avg_speed} km/h
-                </Popup>
-              </CircleMarker>
-            )
-          ))}
-        </MapContainer>
+        <svg viewBox="0 0 500 450" style={{ width: '100%', height: '350px', backgroundColor: '#0f172a', borderRadius: '8px' }}>
+          {/* India outline simplified */}
+          <ellipse cx="250" cy="250" rx="180" ry="200" fill="none" stroke="#334155" strokeWidth="1" />
+          
+          {/* City dots */}
+          {stats.map((city, i) => {
+            const pos = CITY_POSITIONS[city.city];
+            if (!pos) return null;
+            const radius = Math.max(8, city.total_events / 400);
+            return (
+              <g key={city.city}>
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={radius}
+                  fill={COLORS[i]}
+                  opacity={0.8}
+                />
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={radius + 5}
+                  fill="none"
+                  stroke={COLORS[i]}
+                  strokeWidth="1"
+                  opacity={0.4}
+                />
+                <text x={pos.x} y={pos.y - radius - 5} textAnchor="middle" fill="white" fontSize="12">
+                  {city.city}
+                </text>
+                <text x={pos.x} y={pos.y + radius + 15} textAnchor="middle" fill={COLORS[i]} fontSize="10">
+                  {city.total_events.toLocaleString()} events
+                </text>
+              </g>
+            );
+          })}
+        </svg>
       </div>
 
       {/* Bar Chart */}
       <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px', marginBottom: '30px' }}>
-        <h2 style={{ color: '#38bdf8', marginBottom: '20px' }}>Driver Status by City</h2>
+        <h2 style={{ color: '#38bdf8', marginBottom: '20px' }}>📊 Driver Status by City</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={stats}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -127,10 +138,10 @@ function App() {
 
       {/* Pie Chart */}
       <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px' }}>
-        <h2 style={{ color: '#38bdf8', marginBottom: '20px' }}>Total Events by City</h2>
+        <h2 style={{ color: '#38bdf8', marginBottom: '20px' }}>🥧 Total Events by City</h2>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
-            <Pie data={stats} dataKey="total_events" nameKey="city" cx="50%" cy="50%" outerRadius={100} label>
+            <Pie data={stats} dataKey="total_events" nameKey="city" cx="50%" cy="50%" outerRadius={100} label={({name}) => name}>
               {stats.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
             </Pie>
             <Tooltip />

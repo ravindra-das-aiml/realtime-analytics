@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import './App.css';
 
+const API = 'https://realtime-analytics-api.onrender.com';
 const COLORS = ['#f59e0b', '#818cf8', '#4ade80', '#f87171', '#38bdf8'];
 
 const CITY_POSITIONS = {
@@ -12,24 +13,85 @@ const CITY_POSITIONS = {
   Hyderabad: { x: 240, y: 290 },
 };
 
-function App() {
+function Login({ onLogin }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
+      const res = await fetch(`${API}/token`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+        onLogin(data.access_token);
+      } else {
+        setError('Invalid credentials!');
+      }
+    } catch {
+      setError('Server error!');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', padding: '40px', width: '350px', border: '1px solid #334155' }}>
+        <h1 style={{ color: '#38bdf8', textAlign: 'center', marginBottom: '30px' }}>🚀 Analytics Engine</h1>
+        <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: '30px' }}>Sign in to access dashboard</p>
+        
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          style={{ width: '100%', padding: '12px', marginBottom: '15px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontSize: '16px', boxSizing: 'border-box' }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          onKeyPress={e => e.key === 'Enter' && handleLogin()}
+          style={{ width: '100%', padding: '12px', marginBottom: '20px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontSize: '16px', boxSizing: 'border-box' }}
+        />
+        
+        {error && <p style={{ color: '#f87171', textAlign: 'center', marginBottom: '15px' }}>{error}</p>}
+        
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          style={{ width: '100%', padding: '12px', backgroundColor: '#38bdf8', border: 'none', borderRadius: '8px', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+        </button>
+        
+        <p style={{ color: '#94a3b8', textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>
+          Demo: admin / admin123
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ token, onLogout }) {
   const [stats, setStats] = useState([]);
   const [lastUpdate, setLastUpdate] = useState('');
   const [connected, setConnected] = useState(false);
-  const [alerts, setAlerts] = useState([]);
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('https://realtime-analytics-api.onrender.com/api/stats');
+      const res = await fetch(`${API}/api/public/stats`);
       const data = await res.json();
       setStats(data.cities);
       setLastUpdate(new Date().toLocaleTimeString());
       setConnected(true);
-      const newAlerts = data.cities
-        .filter(c => c.avg_speed > 60)
-        .map(c => `⚠️ ${c.city}: High speed — ${c.avg_speed} km/h`);
-      if (newAlerts.length > 0) setAlerts(newAlerts);
-    } catch (err) {
+    } catch {
       setConnected(false);
     }
   };
@@ -44,21 +106,19 @@ function App() {
     <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', padding: '20px', color: 'white', fontFamily: 'Arial' }}>
 
       {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h1 style={{ color: '#38bdf8', fontSize: '1.8rem' }}>Real-Time Analytics Engine 🚀</h1>
+        <button onClick={onLogout} style={{ padding: '8px 16px', backgroundColor: '#f87171', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer' }}>
+          Logout
+        </button>
+      </div>
+
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <h1 style={{ color: '#38bdf8', fontSize: '2rem' }}>Real-Time Analytics Engine 🚀</h1>
         <p style={{ color: connected ? '#4ade80' : '#f87171' }}>
           {connected ? '🟢 Live — Updates every 3 seconds' : '🔴 Connecting...'}
         </p>
         <p style={{ color: '#94a3b8' }}>Last update: {lastUpdate}</p>
       </div>
-
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <div style={{ backgroundColor: '#7f1d1d', borderRadius: '8px', padding: '10px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#f87171', margin: '0 0 8px' }}>🚨 Speed Alerts</h3>
-          {alerts.map((a, i) => <p key={i} style={{ margin: '4px 0', color: '#fca5a5' }}>{a}</p>)}
-        </div>
-      )}
 
       {/* City Cards */}
       <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '30px' }}>
@@ -81,38 +141,17 @@ function App() {
       <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px', marginBottom: '30px' }}>
         <h2 style={{ color: '#38bdf8', marginBottom: '10px' }}>🗺️ Live City Map</h2>
         <svg viewBox="0 0 500 450" style={{ width: '100%', height: '350px', backgroundColor: '#0f172a', borderRadius: '8px' }}>
-          {/* India outline simplified */}
           <ellipse cx="250" cy="250" rx="180" ry="200" fill="none" stroke="#334155" strokeWidth="1" />
-          
-          {/* City dots */}
           {stats.map((city, i) => {
             const pos = CITY_POSITIONS[city.city];
             if (!pos) return null;
             const radius = Math.max(8, city.total_events / 400);
             return (
               <g key={city.city}>
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={radius}
-                  fill={COLORS[i]}
-                  opacity={0.8}
-                />
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={radius + 5}
-                  fill="none"
-                  stroke={COLORS[i]}
-                  strokeWidth="1"
-                  opacity={0.4}
-                />
-                <text x={pos.x} y={pos.y - radius - 5} textAnchor="middle" fill="white" fontSize="12">
-                  {city.city}
-                </text>
-                <text x={pos.x} y={pos.y + radius + 15} textAnchor="middle" fill={COLORS[i]} fontSize="10">
-                  {city.total_events.toLocaleString()} events
-                </text>
+                <circle cx={pos.x} cy={pos.y} r={radius} fill={COLORS[i]} opacity={0.8} />
+                <circle cx={pos.x} cy={pos.y} r={radius + 5} fill="none" stroke={COLORS[i]} strokeWidth="1" opacity={0.4} />
+                <text x={pos.x} y={pos.y - radius - 5} textAnchor="middle" fill="white" fontSize="12">{city.city}</text>
+                <text x={pos.x} y={pos.y + radius + 15} textAnchor="middle" fill={COLORS[i]} fontSize="10">{city.total_events.toLocaleString()} events</text>
               </g>
             );
           })}
@@ -152,6 +191,19 @@ function App() {
 
     </div>
   );
+}
+
+function App() {
+  const [token, setToken] = useState(localStorage.getItem('token'));
+
+  const handleLogin = (token) => setToken(token);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+  };
+
+  if (!token) return <Login onLogin={handleLogin} />;
+  return <Dashboard token={token} onLogout={handleLogout} />;
 }
 
 export default App;

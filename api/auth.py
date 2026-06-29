@@ -6,7 +6,7 @@ SECRET_KEY = "ravindra-realtime-analytics-secret-key-2024"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 # Fake users database
 USERS_DB = {

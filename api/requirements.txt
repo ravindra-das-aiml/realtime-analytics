@@ -3,3 +3,8 @@ uvicorn
 redis
 pymongo
 websockets
+python-jose
+passlib
+bcrypt
+python-multipart
+certifi

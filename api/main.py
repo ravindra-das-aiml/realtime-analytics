@@ -2,7 +2,8 @@ import json
 import asyncio
 import redis
 import certifi
-from fastapi import FastAPI, WebSocket, Depends, HTTPException, status
+from datetime import datetime
+from fastapi import FastAPI, WebSocket, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pymongo import MongoClient
@@ -33,6 +34,10 @@ db = mongo['analytics']
 
 CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Patna', 'Hyderabad']
 
+# History storage for line chart
+history_data = []
+MAX_HISTORY = 20
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -60,6 +65,16 @@ def get_city_stats():
         })
     return stats
 
+def update_history():
+    stats = get_city_stats()
+    entry = {"time": datetime.now().strftime("%H:%M:%S")}
+    for s in stats:
+        entry[s["city"]] = s["avg_speed"]
+    history_data.append(entry)
+    if len(history_data) > MAX_HISTORY:
+        history_data.pop(0)
+    return stats
+
 @app.get("/")
 def root():
     return {"message": "Real-Time Analytics Engine is Live!"}
@@ -76,12 +91,17 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 # Protected endpoint
 @app.get("/api/stats")
 def get_stats(current_user: str = Depends(get_current_user)):
-    return {"cities": get_city_stats(), "user": current_user}
+    return {"cities": update_history(), "user": current_user}
 
 # Public endpoint
 @app.get("/api/public/stats")
 def get_public_stats():
-    return {"cities": get_city_stats()}
+    return {"cities": update_history()}
+
+# History endpoint for line chart
+@app.get("/api/history")
+def get_history():
+    return {"history": history_data}
 
 @app.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):

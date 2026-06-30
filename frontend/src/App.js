@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import './App.css';
 
 const API = 'https://realtime-analytics-api.onrender.com';
@@ -81,6 +81,7 @@ function Login({ onLogin }) {
 
 function Dashboard({ token, onLogout }) {
   const [stats, setStats] = useState([]);
+  const [history, setHistory] = useState([]);
   const [lastUpdate, setLastUpdate] = useState('');
   const [connected, setConnected] = useState(false);
 
@@ -91,6 +92,10 @@ function Dashboard({ token, onLogout }) {
       setStats(data.cities);
       setLastUpdate(new Date().toLocaleTimeString());
       setConnected(true);
+
+      const histRes = await fetch(`${API}/api/history`);
+      const histData = await histRes.json();
+      setHistory(histData.history);
     } catch {
       setConnected(false);
     }
@@ -176,7 +181,7 @@ function Dashboard({ token, onLogout }) {
       </div>
 
       {/* Pie Chart */}
-      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px' }}>
+      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px', marginBottom: '30px' }}>
         <h2 style={{ color: '#38bdf8', marginBottom: '20px' }}>🥧 Total Events by City</h2>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -186,6 +191,25 @@ function Dashboard({ token, onLogout }) {
             <Tooltip />
             <Legend />
           </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Line Chart - Speed Trend */}
+      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px' }}>
+        <h2 style={{ color: '#38bdf8', marginBottom: '20px' }}>📈 Speed Trend Over Time</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={history}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+            <XAxis dataKey="time" stroke="#94a3b8" />
+            <YAxis stroke="#94a3b8" />
+            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
+            <Legend />
+            <Line type="monotone" dataKey="Mumbai" stroke="#f59e0b" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="Delhi" stroke="#818cf8" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="Bangalore" stroke="#4ade80" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="Patna" stroke="#f87171" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="Hyderabad" stroke="#38bdf8" strokeWidth={2} dot={false} />
+          </LineChart>
         </ResponsiveContainer>
       </div>
 

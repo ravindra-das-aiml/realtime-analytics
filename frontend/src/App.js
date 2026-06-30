@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import './App.css';
 
@@ -12,6 +12,21 @@ const CITY_POSITIONS = {
   Patna:     { x: 300, y: 190 },
   Hyderabad: { x: 240, y: 290 },
 };
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 880;
+    gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+    oscillator.start();
+    oscillator.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+}
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -85,6 +100,7 @@ function Dashboard({ token, onLogout }) {
   const [lastUpdate, setLastUpdate] = useState('');
   const [connected, setConnected] = useState(false);
   const [alerts, setAlerts] = useState([]);
+  const prevAlertCount = useRef(0);
 
   const fetchStats = async () => {
     try {
@@ -98,10 +114,16 @@ function Dashboard({ token, onLogout }) {
       const histData = await histRes.json();
       setHistory(histData.history);
 
-      // Alert system — speed > 45 km/h (testing threshold)
+      // Alert system — speed > 60 km/h
       const newAlerts = data.cities
-        .filter(c => c.avg_speed > 45)
+        .filter(c => c.avg_speed > 60)
         .map(c => `⚠️ ${c.city}: High speed detected — ${c.avg_speed} km/h`);
+
+      // Play sound only when alert count increases (new alert appeared)
+      if (newAlerts.length > prevAlertCount.current) {
+        playBeep();
+      }
+      prevAlertCount.current = newAlerts.length;
       setAlerts(newAlerts);
 
     } catch {

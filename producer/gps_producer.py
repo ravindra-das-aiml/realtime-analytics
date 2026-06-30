@@ -27,7 +27,7 @@ def generate_event():
         'city': city,
         'lat': round(random.uniform(*bounds['lat']), 6),
         'lng': round(random.uniform(*bounds['lng']), 6),
-        'speed_kmh': round(random.uniform(0, 80), 1),
+        'speed_kmh': round(random.uniform(0, 95), 1),
         'status': random.choice(['delivering', 'idle', 'returning']),
         'timestamp': int(time.time() * 1000)
     }

@@ -84,6 +84,7 @@ function Dashboard({ token, onLogout }) {
   const [history, setHistory] = useState([]);
   const [lastUpdate, setLastUpdate] = useState('');
   const [connected, setConnected] = useState(false);
+  const [alerts, setAlerts] = useState([]);
 
   const fetchStats = async () => {
     try {
@@ -96,6 +97,13 @@ function Dashboard({ token, onLogout }) {
       const histRes = await fetch(`${API}/api/history`);
       const histData = await histRes.json();
       setHistory(histData.history);
+
+      // Alert system — speed > 45 km/h (testing threshold)
+      const newAlerts = data.cities
+        .filter(c => c.avg_speed > 45)
+        .map(c => `⚠️ ${c.city}: High speed detected — ${c.avg_speed} km/h`);
+      setAlerts(newAlerts);
+
     } catch {
       setConnected(false);
     }
@@ -124,6 +132,14 @@ function Dashboard({ token, onLogout }) {
         </p>
         <p style={{ color: '#94a3b8' }}>Last update: {lastUpdate}</p>
       </div>
+
+      {/* Alerts */}
+      {alerts.length > 0 && (
+        <div style={{ backgroundColor: '#7f1d1d', borderRadius: '8px', padding: '15px', marginBottom: '20px', maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto' }}>
+          <h3 style={{ color: '#f87171', margin: '0 0 8px' }}>🚨 Speed Alerts</h3>
+          {alerts.map((a, i) => <p key={i} style={{ margin: '4px 0', color: '#fca5a5' }}>{a}</p>)}
+        </div>
+      )}
 
       {/* City Cards */}
       <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '30px' }}>

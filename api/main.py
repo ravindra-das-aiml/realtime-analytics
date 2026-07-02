@@ -2,6 +2,7 @@ import json
 import asyncio
 import redis
 import certifi
+import time
 from datetime import datetime
 from fastapi import FastAPI, WebSocket, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,13 +29,17 @@ r = redis.Redis(
 )
 
 # MongoDB Atlas
-MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:Ravindramalhotra7250@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
+MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:TUMHARA_PASSWORD@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
 mongo = MongoClient(MONGO_URL, tlsCAFile=certifi.where())
 db = mongo['analytics']
 
 CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Patna', 'Hyderabad']
 
-# History storage for line chart
+# Cache
+cache = {'data': None, 'time': 0}
+CACHE_TTL = 2  # seconds
+
+# History storage
 history_data = []
 MAX_HISTORY = 20
 
@@ -47,6 +52,11 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return username
 
 def get_city_stats():
+    # Check cache first
+    now = time.time()
+    if cache['data'] and (now - cache['time']) < CACHE_TTL:
+        return cache['data']
+    
     stats = []
     for city in CITIES:
         total = int(r.get(f"city:{city}:total_events") or 0)
@@ -63,6 +73,10 @@ def get_city_stats():
             "idle": idle,
             "returning": returning
         })
+    
+    # Update cache
+    cache['data'] = stats
+    cache['time'] = now
     return stats
 
 def update_history():
@@ -79,7 +93,6 @@ def update_history():
 def root():
     return {"message": "Real-Time Analytics Engine is Live!"}
 
-# Login endpoint
 @app.post("/token")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = USERS_DB.get(form_data.username)
@@ -88,17 +101,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     token = create_access_token({"sub": form_data.username})
     return {"access_token": token, "token_type": "bearer"}
 
-# Protected endpoint
 @app.get("/api/stats")
 def get_stats(current_user: str = Depends(get_current_user)):
     return {"cities": update_history(), "user": current_user}
 
-# Public endpoint
 @app.get("/api/public/stats")
 def get_public_stats():
     return {"cities": update_history()}
 
-# History endpoint for line chart
 @app.get("/api/history")
 def get_history():
     return {"history": history_data}

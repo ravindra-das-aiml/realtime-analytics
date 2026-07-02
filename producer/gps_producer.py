@@ -1,15 +1,11 @@
 import json
 import time
 import random
+import threading
 from kafka import KafkaProducer
 from faker import Faker
 
 fake = Faker('en_IN')
-
-producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
 
 CITIES = {
     'Mumbai':    {'lat': (18.89, 19.26), 'lng': (72.77, 72.98)},
@@ -18,6 +14,15 @@ CITIES = {
     'Patna':     {'lat': (25.55, 25.65), 'lng': (85.08, 85.22)},
     'Hyderabad': {'lat': (17.30, 17.50), 'lng': (78.35, 78.55)},
 }
+
+def create_producer():
+    return KafkaProducer(
+        bootstrap_servers='localhost:9092',
+        value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+        batch_size=16384,
+        linger_ms=5,
+        compression_type='gzip'
+    )
 
 def generate_event():
     city = random.choice(list(CITIES.keys()))
@@ -32,12 +37,38 @@ def generate_event():
         'timestamp': int(time.time() * 1000)
     }
 
-print("Producer started — sending events to Kafka...")
-count = 0
-while True:
-    event = generate_event()
-    producer.send('location-events', value=event)
-    count += 1
-    if count % 100 == 0:
-        print(f"{count} events sent | {event['driver_id']} in {event['city']} @ {event['speed_kmh']} km/h")
-    time.sleep(0.01)
+# Counter shared across threads
+counter = {'count': 0}
+lock = threading.Lock()
+
+def producer_thread(thread_id):
+    producer = create_producer()
+    while True:
+        event = generate_event()
+        producer.send('location-events', value=event)
+        with lock:
+            counter['count'] += 1
+
+def main():
+    print("🚀 High-Performance Producer starting — Target: 10,000 events/sec")
+    
+    # 10 threads — each sending 1000 events/sec = 10,000 total
+    num_threads = 10
+    threads = []
+    for i in range(num_threads):
+        t = threading.Thread(target=producer_thread, args=(i,), daemon=True)
+        t.start()
+        threads.append(t)
+    
+    print(f"✅ {num_threads} producer threads started!")
+    
+    # Print stats every second
+    while True:
+        time.sleep(1)
+        with lock:
+            count = counter['count']
+            counter['count'] = 0
+        print(f"⚡ Events/sec: {count:,} | Total threads: {num_threads}")
+
+if __name__ == '__main__':
+    main()

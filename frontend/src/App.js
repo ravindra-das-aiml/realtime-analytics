@@ -116,7 +116,7 @@ function Dashboard({ token, onLogout }) {
 
       // Alert system — speed > 45 km/h
       const newAlerts = data.cities
-   .filter(c => c.avg_speed > 60)
+   .filter(c => c.avg_speed > 45)
         .map(c => `⚠️ ${c.city}: High speed detected — ${c.avg_speed} km/h`);
 
       // Play sound only when alert count increases (new alert appeared)

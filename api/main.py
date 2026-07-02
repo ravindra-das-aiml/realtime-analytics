@@ -3,6 +3,7 @@ import asyncio
 import redis
 import certifi
 import time
+import os
 from datetime import datetime
 from fastapi import FastAPI, WebSocket, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,17 +20,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Upstash Redis
+# Redis — environment variable se decide hoga
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+REDIS_SSL = os.getenv('REDIS_SSL', 'false').lower() == 'true'
+
 r = redis.Redis(
-    host='square-molly-76911.upstash.io',
-    port=6379,
-    password='gQAAAAAAASxvAAIgcDFiODQ2ZmRhMzA0YWM0NWIzOTA3NWIyYTY2MmE1YTA1Ng',
-    ssl=True,
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    password=REDIS_PASSWORD,
+    ssl=REDIS_SSL,
     decode_responses=True
 )
 
 # MongoDB Atlas
-MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:TUMHARA_PASSWORD@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
+MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:Ravindramalhotra7250@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
 mongo = MongoClient(MONGO_URL, tlsCAFile=certifi.where())
 db = mongo['analytics']
 
@@ -37,7 +43,7 @@ CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Patna', 'Hyderabad']
 
 # Cache
 cache = {'data': None, 'time': 0}
-CACHE_TTL = 2  # seconds
+CACHE_TTL = 2
 
 # History storage
 history_data = []
@@ -52,7 +58,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return username
 
 def get_city_stats():
-    # Check cache first
     now = time.time()
     if cache['data'] and (now - cache['time']) < CACHE_TTL:
         return cache['data']
@@ -74,7 +79,6 @@ def get_city_stats():
             "returning": returning
         })
     
-    # Update cache
     cache['data'] = stats
     cache['time'] = now
     return stats

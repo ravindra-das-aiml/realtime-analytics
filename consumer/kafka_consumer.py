@@ -16,24 +16,33 @@ consumer = KafkaConsumer(
     bootstrap_servers='localhost:9092',
     value_deserializer=lambda v: json.loads(v.decode('utf-8')),
     auto_offset_reset='latest',
-    group_id='analytics-group-v6'
+    group_id='analytics-group-v7',
+    fetch_max_bytes=52428800,
+    max_poll_records=500
 )
 
-print("Consumer started — saving to Upstash Redis...")
+print("Consumer started — Redis Pipelining enabled...")
 
+batch = []
 count = 0
 
 for message in consumer:
-    event = message.value
-    city = event['city']
-    speed = event['speed_kmh']
-    status = event['status']
-
-    r.incr(f"city:{city}:total_events")
-    r.lpush(f"city:{city}:speeds", speed)
-    r.ltrim(f"city:{city}:speeds", 0, 99)
-    r.incr(f"city:{city}:status:{status}")
-
-    count += 1
-    if count % 500 == 0:
-        print(f"✅ {count} events | {city} | Upstash Redis mein save!")
+    batch.append(message.value)
+    
+    if len(batch) >= 100:
+        # Redis Pipeline — batch operations (10x faster!)
+        pipe = r.pipeline()
+        for event in batch:
+            city = event['city']
+            speed = event['speed_kmh']
+            status = event['status']
+            pipe.incr(f"city:{city}:total_events")
+            pipe.lpush(f"city:{city}:speeds", speed)
+            pipe.ltrim(f"city:{city}:speeds", 0, 99)
+            pipe.incr(f"city:{city}:status:{status}")
+        pipe.execute()
+        
+        count += len(batch)
+        city = batch[-1]['city']
+        print(f"✅ {count} events | {city} | Redis Pipeline executed!")
+        batch = []

@@ -1,8 +1,7 @@
-version: '3.8'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
+    restart: always
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
     ports:
@@ -10,6 +9,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
+    restart: always
     depends_on:
       - zookeeper
     ports:
@@ -22,11 +22,13 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
   mongodb:
     image: mongo:7
+    restart: always
     ports:
       - "27017:27017"
     environment:

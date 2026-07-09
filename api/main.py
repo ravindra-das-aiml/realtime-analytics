@@ -20,9 +20,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Redis — environment variable se decide hoga
+# Redis
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6380))
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
 REDIS_SSL = os.getenv('REDIS_SSL', 'false').lower() == 'true'
 
@@ -41,11 +41,9 @@ db = mongo['analytics']
 
 CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Patna', 'Hyderabad']
 
-# Cache
 cache = {'data': None, 'time': 0}
 CACHE_TTL = 2
 
-# History storage
 history_data = []
 MAX_HISTORY = 20
 

@@ -5,7 +5,7 @@ from kafka import KafkaConsumer
 # Local Redis
 r = redis.Redis(
     host='localhost',
-    port=6379,
+    port=6380,
     decode_responses=True
 )
 
@@ -14,12 +14,12 @@ consumer = KafkaConsumer(
     bootstrap_servers='localhost:9092',
     value_deserializer=lambda v: json.loads(v.decode('utf-8')),
     auto_offset_reset='latest',
-    group_id='analytics-group-v9',
+    group_id='analytics-group-v10',
     fetch_max_bytes=52428800,
     max_poll_records=500
 )
 
-print("Consumer started — Local Redis Pipelining enabled...")
+print("Consumer started — Local Redis Pipeline enabled...")
 
 batch = []
 count = 0
@@ -41,5 +41,5 @@ for message in consumer:
         
         count += len(batch)
         city = batch[-1]['city']
-        print(f"✅ {count} events | {city} | Local Redis Pipeline executed!")
+        print(f"✅ {count} events | {city} | Redis Pipeline executed!")
         batch = []

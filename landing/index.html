@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real-Time Analytics Engine</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; }
+
+    /* NAV */
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 60px; border-bottom: 1px solid #1e293b; position: sticky; top: 0; background: #0f172a; z-index: 100; }
+    .logo { color: #38bdf8; font-size: 1.3rem; font-weight: bold; }
+    .nav-links a { color: #94a3b8; text-decoration: none; margin-left: 30px; font-size: 0.95rem; transition: color 0.2s; }
+    .nav-links a:hover { color: #38bdf8; }
+    .nav-btn { background: #38bdf8; color: #0f172a; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
+
+    /* HERO */
+    .hero { text-align: center; padding: 100px 20px 80px; }
+    .badge { display: inline-block; background: #1e293b; border: 1px solid #334155; color: #38bdf8; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; margin-bottom: 24px; }
+    .hero h1 { font-size: 3.5rem; font-weight: 800; line-height: 1.15; margin-bottom: 20px; }
+    .hero h1 span { color: #38bdf8; }
+    .hero p { color: #94a3b8; font-size: 1.2rem; max-width: 600px; margin: 0 auto 40px; line-height: 1.7; }
+    .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary { background: #38bdf8; color: #0f172a; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: opacity 0.2s; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary { background: transparent; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; border: 1px solid #334155; transition: border-color 0.2s; }
+    .btn-secondary:hover { border-color: #38bdf8; }
+
+    /* STATS */
+    .stats { display: flex; justify-content: center; gap: 60px; padding: 60px 20px; border-top: 1px solid #1e293b; border-bottom: 1px solid #1e293b; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat h2 { font-size: 2.5rem; font-weight: 800; color: #38bdf8; }
+    .stat p { color: #94a3b8; margin-top: 6px; font-size: 0.95rem; }
+
+    /* FEATURES */
+    .section { padding: 80px 60px; }
+    .section-title { text-align: center; font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+    .section-sub { text-align: center; color: #94a3b8; margin-bottom: 50px; font-size: 1rem; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .feature-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px; transition: border-color 0.2s; }
+    .feature-card:hover { border-color: #38bdf8; }
+    .feature-icon { font-size: 2rem; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { color: #94a3b8; font-size: 0.95rem; line-height: 1.6; }
+
+    /* TECH STACK */
+    .tech { padding: 80px 60px; background: #0a0f1e; }
+    .tech-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 40px; }
+    .tech-badge { background: #1e293b; border: 1px solid #334155; padding: 12px 24px; border-radius: 10px; font-size: 0.95rem; color: #94a3b8; }
+    .tech-badge span { color: #38bdf8; font-weight: bold; }
+
+    /* ARCHITECTURE */
+    .arch { padding: 80px 60px; }
+    .arch-steps { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; margin-top: 40px; }
+    .arch-step { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px 24px; text-align: center; }
+    .arch-step h4 { color: #38bdf8; font-size: 0.85rem; margin-bottom: 4px; }
+    .arch-step p { color: white; font-size: 0.9rem; font-weight: bold; }
+    .arch-arrow { color: #38bdf8; font-size: 1.5rem; }
+
+    /* CTA */
+    .cta { text-align: center; padding: 100px 20px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+    .cta h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 16px; }
+    .cta p { color: #94a3b8; margin-bottom: 40px; font-size: 1.1rem; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 30px; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 0.9rem; }
+    footer a { color: #38bdf8; text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.2rem; }
+      nav { padding: 16px 20px; }
+      .section { padding: 60px 20px; }
+      .tech { padding: 60px 20px; }
+      .arch { padding: 60px 20px; }
+      .stats { gap: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">⚡ RealTime Analytics</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#tech">Tech Stack</a>
+      <a href="https://realtime-analytics-dashboard-jet.vercel.app" class="nav-btn">Live Demo →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="badge">🚀 Production-Grade Real-Time System</div>
+    <h1>Real-Time Analytics<br/><span>Engine</span></h1>
+    <p>A distributed data pipeline processing <strong>18,000+ events/second</strong> from 5 Indian cities — inspired by Uber & Zomato architecture.</p>
+    <div class="hero-btns">
+      <a href="https://realtime-analytics-dashboard-jet.vercel.app" class="btn-primary">View Live Dashboard →</a>
+      <a href="https://github.com/ravindra-das-aiml/realtime-analytics" class="btn-secondary">GitHub Repo</a>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><h2>18K+</h2><p>Events per Second</p></div>
+    <div class="stat"><h2>5M+</h2><p>Events Processed</p></div>
+    <div class="stat"><h2>5</h2><p>Indian Cities</p></div>
+    <div class="stat"><h2>3s</h2><p>Live Update Interval</p></div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <h2 class="section-title">Everything you need</h2>
+    <p class="section-sub">Production-grade features built from scratch</p>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>High-Performance Pipeline</h3>
+        <p>Multi-threaded Kafka producer with batch processing and gzip compression handling 18,000+ events/sec.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>JWT Authentication</h3>
+        <p>Secure login system with JSON Web Tokens. Protected API endpoints with token-based access control.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Live Charts & Analytics</h3>
+        <p>Real-time Bar Chart, Pie Chart, and Line Chart updating every 3 seconds with live driver data.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗺️</div>
+        <h3>Live City Map</h3>
+        <p>Interactive SVG map showing live event bubbles across Mumbai, Delhi, Bangalore, Patna & Hyderabad.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚨</div>
+        <h3>Sound Alert System</h3>
+        <p>Automatic audio alerts triggered when average speed exceeds threshold — real-time monitoring.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧪</div>
+        <h3>CI/CD Pipeline</h3>
+        <p>GitHub Actions automatically runs 6 unit tests on every push — ensuring code quality always.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section class="arch" id="architecture">
+    <h2 class="section-title">System Architecture</h2>
+    <p class="section-sub">Distributed pipeline inspired by Uber/Zomato</p>
+    <div class="arch-steps">
+      <div class="arch-step"><h4>Step 1</h4><p>GPS Simulator</p></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-step"><h4>Step 2</h4><p>Apache Kafka</p></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-step"><h4>Step 3</h4><p>Stream Consumer</p></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-step"><h4>Step 4</h4><p>Redis Cache</p></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-step"><h4>Step 5</h4><p>FastAPI</p></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-step"><h4>Step 6</h4><p>React Dashboard</p></div>
+    </div>
+  </section>
+
+  <!-- TECH STACK -->
+  <section class="tech" id="tech">
+    <h2 class="section-title">Tech Stack</h2>
+    <p class="section-sub">Industry-standard technologies used in production</p>
+    <div class="tech-grid">
+      <div class="tech-badge"><span>Apache Kafka</span> — Message Queue</div>
+      <div class="tech-badge"><span>Redis</span> — Live Cache</div>
+      <div class="tech-badge"><span>MongoDB Atlas</span> — Database</div>
+      <div class="tech-badge"><span>Python FastAPI</span> — Backend</div>
+      <div class="tech-badge"><span>React.js</span> — Frontend</div>
+      <div class="tech-badge"><span>Docker</span> — Containerization</div>
+      <div class="tech-badge"><span>GitHub Actions</span> — CI/CD</div>
+      <div class="tech-badge"><span>Vercel</span> — Frontend Deploy</div>
+      <div class="tech-badge"><span>Render</span> — Backend Deploy</div>
+      <div class="tech-badge"><span>JWT</span> — Authentication</div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <h2>See it in Action 🚀</h2>
+    <p>Login with demo credentials and explore the live dashboard</p>
+    <div class="hero-btns">
+      <a href="https://realtime-analytics-dashboard-jet.vercel.app" class="btn-primary">Open Live Dashboard →</a>
+      <a href="https://github.com/ravindra-das-aiml/realtime-analytics" class="btn-secondary">View Source Code</a>
+    </div>
+    <p style="margin-top: 20px; color: #64748b; font-size: 0.9rem;">Demo credentials: admin / admin123</p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Built by <a href="https://github.com/ravindra-das-aiml">Ravindra Das</a> — B.Tech CSE | 
+    <a href="https://github.com/ravindra-das-aiml/realtime-analytics">GitHub</a> · 
+    <a href="https://realtime-analytics-dashboard-jet.vercel.app">Live Demo</a></p>
+  </footer>
+
+</body>
+</html>

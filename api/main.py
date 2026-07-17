@@ -5,19 +5,36 @@ import certifi
 import time
 import os
 from datetime import datetime
-from fastapi import FastAPI, WebSocket, Depends, HTTPException
+from fastapi import FastAPI, WebSocket, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import RedirectResponse
 from pymongo import MongoClient
+from authlib.integrations.starlette_client import OAuth
+from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
 from auth import verify_password, create_access_token, verify_token, USERS_DB
+
+load_dotenv()
 
 app = FastAPI(title="Real-Time Analytics API")
 
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "secret"))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Google OAuth
+oauth = OAuth()
+oauth.register(
+    name='google',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
 )
 
 # Redis
@@ -35,7 +52,7 @@ r = redis.Redis(
 )
 
 # MongoDB Atlas
-MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:Ravindramalhotra7250@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
+MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:TUMHARA_PASSWORD@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
 mongo = MongoClient(MONGO_URL, tlsCAFile=certifi.where())
 db = mongo['analytics']
 
@@ -59,7 +76,6 @@ def get_city_stats():
     now = time.time()
     if cache['data'] and (now - cache['time']) < CACHE_TTL:
         return cache['data']
-    
     stats = []
     for city in CITIES:
         total = int(r.get(f"city:{city}:total_events") or 0)
@@ -76,7 +92,6 @@ def get_city_stats():
             "idle": idle,
             "returning": returning
         })
-    
     cache['data'] = stats
     cache['time'] = now
     return stats
@@ -102,6 +117,26 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=400, detail="Invalid credentials")
     token = create_access_token({"sub": form_data.username})
     return {"access_token": token, "token_type": "bearer"}
+
+# Google Login
+@app.get("/auth/google")
+async def google_login(request: Request):
+    redirect_uri = request.url_for('google_callback')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/auth/google/callback")
+async def google_callback(request: Request):
+    token = await oauth.google.authorize_access_token(request)
+    user_info = token.get('userinfo')
+    if user_info:
+        email = user_info['email']
+        name = user_info['name']
+        access_token = create_access_token({"sub": email})
+        # Redirect to frontend with token
+        return RedirectResponse(
+            url=f"http://localhost:3000?token={access_token}&name={name}"
+        )
+    raise HTTPException(status_code=400, detail="Google login failed")
 
 @app.get("/api/stats")
 def get_stats(current_user: str = Depends(get_current_user)):

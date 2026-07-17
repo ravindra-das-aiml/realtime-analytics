@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { signInWithGoogle } from './firebase';
 import './App.css';
 
 const API = 'http://localhost:8000';
@@ -44,7 +45,8 @@ function Login({ onLogin }) {
       const data = await res.json();
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
-        onLogin(data.access_token);
+        localStorage.setItem('username', username);
+        onLogin(data.access_token, username);
       } else {
         setError('Invalid credentials!');
       }
@@ -54,28 +56,58 @@ function Login({ onLogin }) {
     setLoading(false);
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const user = await signInWithGoogle();
+      if (user) {
+        localStorage.setItem('token', user.token);
+        localStorage.setItem('username', user.name);
+        localStorage.setItem('userPhoto', user.photo);
+        onLogin(user.token, user.name, user.photo);
+      } else {
+        setError('Google login failed!');
+      }
+    } catch {
+      setError('Google login error!');
+    }
+    setLoading(false);
+  };
+
   return (
     <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', padding: '40px', width: '350px', border: '1px solid #334155' }}>
-        <h1 style={{ color: '#38bdf8', textAlign: 'center', marginBottom: '30px' }}>🚀 Analytics Engine</h1>
+        <h1 style={{ color: '#38bdf8', textAlign: 'center', marginBottom: '10px' }}>🚀 Analytics Engine</h1>
         <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: '30px' }}>Sign in to access dashboard</p>
+
         <input type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)}
           style={{ width: '100%', padding: '12px', marginBottom: '15px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontSize: '16px', boxSizing: 'border-box' }} />
         <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
           onKeyPress={e => e.key === 'Enter' && handleLogin()}
           style={{ width: '100%', padding: '12px', marginBottom: '20px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontSize: '16px', boxSizing: 'border-box' }} />
+
         {error && <p style={{ color: '#f87171', textAlign: 'center', marginBottom: '15px' }}>{error}</p>}
+
         <button onClick={handleLogin} disabled={loading}
-          style={{ width: '100%', padding: '12px', backgroundColor: '#38bdf8', border: 'none', borderRadius: '8px', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
+          style={{ width: '100%', padding: '12px', backgroundColor: '#38bdf8', border: 'none', borderRadius: '8px', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '15px' }}>
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
+
+        <div style={{ textAlign: 'center', color: '#94a3b8', marginBottom: '15px' }}>— or —</div>
+
+        <button onClick={handleGoogleLogin} disabled={loading}
+          style={{ width: '100%', padding: '12px', backgroundColor: 'white', border: 'none', borderRadius: '8px', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: '20px', height: '20px' }} />
+          Continue with Google
+        </button>
+
         <p style={{ color: '#94a3b8', textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>Demo: admin / admin123</p>
       </div>
     </div>
   );
 }
 
-function Dashboard({ token, onLogout }) {
+function Dashboard({ token, username, userPhoto, onLogout }) {
   const [stats, setStats] = useState([]);
   const [history, setHistory] = useState([]);
   const [lastUpdate, setLastUpdate] = useState('');
@@ -114,8 +146,13 @@ function Dashboard({ token, onLogout }) {
     <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', padding: '20px', color: 'white', fontFamily: 'Arial' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ color: '#38bdf8', fontSize: '1.8rem' }}>Real-Time Analytics Engine 🚀</h1>
-        <button onClick={onLogout} style={{ padding: '8px 16px', backgroundColor: '#f87171', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer' }}>Logout</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {userPhoto && <img src={userPhoto} alt="User" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />}
+          <span style={{ color: '#94a3b8' }}>{username}</span>
+          <button onClick={onLogout} style={{ padding: '8px 16px', backgroundColor: '#f87171', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer' }}>Logout</button>
+        </div>
       </div>
+
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <p style={{ color: connected ? '#4ade80' : '#f87171' }}>{connected ? '🟢 Live — Updates every 3 seconds' : '🔴 Connecting...'}</p>
         <p style={{ color: '#94a3b8' }}>Last update: {lastUpdate}</p>
@@ -141,7 +178,6 @@ function Dashboard({ token, onLogout }) {
         ))}
       </div>
 
-      {/* SVG Map */}
       <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '20px', marginBottom: '30px' }}>
         <h2 style={{ color: '#38bdf8', marginBottom: '10px' }}>🗺️ Live City Map</h2>
         <svg viewBox="0 0 500 500" style={{ width: '100%', height: '350px', backgroundColor: '#0f172a', borderRadius: '8px' }}>
@@ -213,10 +249,26 @@ function Dashboard({ token, onLogout }) {
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const handleLogin = (token) => setToken(token);
-  const handleLogout = () => { localStorage.removeItem('token'); setToken(null); };
+  const [username, setUsername] = useState(localStorage.getItem('username') || '');
+  const [userPhoto, setUserPhoto] = useState(localStorage.getItem('userPhoto') || '');
+
+  const handleLogin = (token, name, photo) => {
+    setToken(token);
+    setUsername(name || '');
+    setUserPhoto(photo || '');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userPhoto');
+    setToken(null);
+    setUsername('');
+    setUserPhoto('');
+  };
+
   if (!token) return <Login onLogin={handleLogin} />;
-  return <Dashboard token={token} onLogout={handleLogout} />;
+  return <Dashboard token={token} username={username} userPhoto={userPhoto} onLogout={handleLogout} />;
 }
 
 export default App;

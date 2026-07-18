@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { signInWithGoogle, auth } from './firebase';
-import { getRedirectResult } from 'firebase/auth';import './App.css';
+import './App.css';
 
 const API = 'http://localhost:8000';
 const COLORS = ['#f59e0b', '#818cf8', '#4ade80', '#f87171', '#38bdf8'];
@@ -56,24 +55,6 @@ function Login({ onLogin }) {
     setLoading(false);
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    try {
-      const user = await signInWithGoogle();
-      if (user) {
-        localStorage.setItem('token', user.token);
-        localStorage.setItem('username', user.name);
-        localStorage.setItem('userPhoto', user.photo);
-        onLogin(user.token, user.name, user.photo);
-      } else {
-        setError('Google login failed!');
-      }
-    } catch {
-      setError('Google login error!');
-    }
-    setLoading(false);
-  };
-
   return (
     <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', padding: '40px', width: '350px', border: '1px solid #334155' }}>
@@ -89,16 +70,8 @@ function Login({ onLogin }) {
         {error && <p style={{ color: '#f87171', textAlign: 'center', marginBottom: '15px' }}>{error}</p>}
 
         <button onClick={handleLogin} disabled={loading}
-          style={{ width: '100%', padding: '12px', backgroundColor: '#38bdf8', border: 'none', borderRadius: '8px', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '15px' }}>
+          style={{ width: '100%', padding: '12px', backgroundColor: '#38bdf8', border: 'none', borderRadius: '8px', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
           {loading ? 'Signing in...' : 'Sign In'}
-        </button>
-
-        <div style={{ textAlign: 'center', color: '#94a3b8', marginBottom: '15px' }}>— or —</div>
-
-        <button onClick={handleGoogleLogin} disabled={loading}
-          style={{ width: '100%', padding: '12px', backgroundColor: 'white', border: 'none', borderRadius: '8px', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-          <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: '20px', height: '20px' }} />
-          Continue with Google
         </button>
 
         <p style={{ color: '#94a3b8', textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>Demo: admin / admin123</p>
@@ -107,7 +80,7 @@ function Login({ onLogin }) {
   );
 }
 
-function Dashboard({ token, username, userPhoto, onLogout }) {
+function Dashboard({ token, username, onLogout }) {
   const [stats, setStats] = useState([]);
   const [history, setHistory] = useState([]);
   const [lastUpdate, setLastUpdate] = useState('');
@@ -127,7 +100,7 @@ function Dashboard({ token, username, userPhoto, onLogout }) {
       setHistory(histData.history);
       const newAlerts = data.cities
         .filter(c => c.avg_speed > 60)
-        .map(c => `⚠️ ${c.city}: High speed detected — ${c.avg_speed} km/h`);
+        .map(c => `⚠️ ${c.city}: High speed — ${c.avg_speed} km/h`);
       if (newAlerts.length > prevAlertCount.current) playBeep();
       prevAlertCount.current = newAlerts.length;
       setAlerts(newAlerts);
@@ -147,8 +120,7 @@ function Dashboard({ token, username, userPhoto, onLogout }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ color: '#38bdf8', fontSize: '1.8rem' }}>Real-Time Analytics Engine 🚀</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {userPhoto && <img src={userPhoto} alt="User" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />}
-          <span style={{ color: '#94a3b8' }}>{username}</span>
+          <span style={{ color: '#94a3b8' }}>👤 {username}</span>
           <button onClick={onLogout} style={{ padding: '8px 16px', backgroundColor: '#f87171', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer' }}>Logout</button>
         </div>
       </div>
@@ -250,43 +222,21 @@ function Dashboard({ token, username, userPhoto, onLogout }) {
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [username, setUsername] = useState(localStorage.getItem('username') || '');
-  const [userPhoto, setUserPhoto] = useState(localStorage.getItem('userPhoto') || '');
 
-  useEffect(() => {
-    getRedirectResult(auth).then((result) => {
-      if (result && result.user) {
-        const user = result.user;
-        user.getIdToken().then((token) => {
-          localStorage.setItem('token', token);
-          localStorage.setItem('username', user.displayName);
-          localStorage.setItem('userPhoto', user.photoURL);
-          setToken(token);
-          setUsername(user.displayName);
-          setUserPhoto(user.photoURL);
-        });
-      }
-    });
-  }, []);
-  const [username, setUsername] = useState(localStorage.getItem('username') || '');
-  const [userPhoto, setUserPhoto] = useState(localStorage.getItem('userPhoto') || '');
-
-  const handleLogin = (token, name, photo) => {
+  const handleLogin = (token, name) => {
     setToken(token);
     setUsername(name || '');
-    setUserPhoto(photo || '');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-    localStorage.removeItem('userPhoto');
     setToken(null);
     setUsername('');
-    setUserPhoto('');
   };
 
   if (!token) return <Login onLogin={handleLogin} />;
-  return <Dashboard token={token} username={username} userPhoto={userPhoto} onLogout={handleLogout} />;
+  return <Dashboard token={token} username={username} onLogout={handleLogout} />;
 }
 
 export default App;

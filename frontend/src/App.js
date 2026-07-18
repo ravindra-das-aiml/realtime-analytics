@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { signInWithGoogle } from './firebase';
-import './App.css';
+import { signInWithGoogle, auth } from './firebase';
+import { getRedirectResult } from 'firebase/auth';import './App.css';
 
 const API = 'http://localhost:8000';
 const COLORS = ['#f59e0b', '#818cf8', '#4ade80', '#f87171', '#38bdf8'];
@@ -249,6 +249,24 @@ function Dashboard({ token, username, userPhoto, onLogout }) {
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [username, setUsername] = useState(localStorage.getItem('username') || '');
+  const [userPhoto, setUserPhoto] = useState(localStorage.getItem('userPhoto') || '');
+
+  useEffect(() => {
+    getRedirectResult(auth).then((result) => {
+      if (result && result.user) {
+        const user = result.user;
+        user.getIdToken().then((token) => {
+          localStorage.setItem('token', token);
+          localStorage.setItem('username', user.displayName);
+          localStorage.setItem('userPhoto', user.photoURL);
+          setToken(token);
+          setUsername(user.displayName);
+          setUserPhoto(user.photoURL);
+        });
+      }
+    });
+  }, []);
   const [username, setUsername] = useState(localStorage.getItem('username') || '');
   const [userPhoto, setUserPhoto] = useState(localStorage.getItem('userPhoto') || '');
 

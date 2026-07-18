@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 const firebaseConfig = {
   apiKey: "AIzaSyCyuSEYUY1lOD1Lytk5rKXer81IZYlug-Q",
  authDomain: "realtime-analytics-dashboard-jet.vercel.app",
@@ -17,8 +16,7 @@ export const googleProvider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
+    const result = await signInWithRedirect(auth, googleProvider);    const user = result.user;
     return {
       name: user.displayName,
       email: user.email,

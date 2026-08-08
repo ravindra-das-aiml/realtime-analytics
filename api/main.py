@@ -52,7 +52,7 @@ r = redis.Redis(
 )
 
 # MongoDB Atlas
-MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:TUMHARA_PASSWORD@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
+MONGO_URL = "mongodb+srv://ravindramalhotra09_db_user:Ravindramalhotra7250@realtime-analytics.t7hliq4.mongodb.net/analytics?appName=realtime-analytics"
 mongo = MongoClient(MONGO_URL, tlsCAFile=certifi.where())
 db = mongo['analytics']
 

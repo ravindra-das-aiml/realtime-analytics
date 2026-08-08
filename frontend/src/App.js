@@ -233,6 +233,7 @@ function App() {
     localStorage.removeItem('username');
     setToken(null);
     setUsername('');
+    window.location.href = 'https://realtime-analytics-landing.vercel.app';
   };
 
   if (!token) return <Login onLogin={handleLogin} />;

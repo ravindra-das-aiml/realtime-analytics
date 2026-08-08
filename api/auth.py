@@ -8,7 +8,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
-# Fake users database
 USERS_DB = {
     "admin": {
         "username": "admin",

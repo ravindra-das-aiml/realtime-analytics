@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import './App.css';
 
-const API = 'http://localhost:8000';
-const COLORS = ['#f59e0b', '#818cf8', '#4ade80', '#f87171', '#38bdf8'];
+const API = process.env.REACT_APP_API_URL || 'http://localhost:8000';const COLORS = ['#f59e0b', '#818cf8', '#4ade80', '#f87171', '#38bdf8'];
 
 const CITY_POSITIONS = {
   Mumbai:    { x: 150, y: 300 },
